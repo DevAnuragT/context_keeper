@@ -52,8 +52,9 @@ func TestJWT_GenerateAndValidate(t *testing.T) {
 		t.Errorf("Expected email %s, got %s", user.Email, validatedUser.Email)
 	}
 
-	if validatedUser.GitHubToken != user.GitHubToken {
-		t.Errorf("Expected GitHub token %s, got %s", user.GitHubToken, validatedUser.GitHubToken)
+	// GitHub token should be empty for security (not stored in JWT)
+	if validatedUser.GitHubToken != "" {
+		t.Errorf("Expected empty GitHub token for security, got %s", validatedUser.GitHubToken)
 	}
 }
 
@@ -188,7 +189,7 @@ func TestJWT_EmptyUserFields(t *testing.T) {
 	}
 
 	if validatedUser.ID != "" || validatedUser.Login != "" || validatedUser.Email != "" || validatedUser.GitHubToken != "" {
-		t.Error("Empty fields should remain empty after round-trip")
+		t.Error("Empty fields should remain empty after round-trip, and GitHub token should always be empty for security")
 	}
 }
 

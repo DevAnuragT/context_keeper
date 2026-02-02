@@ -6,16 +6,23 @@ services:
     environment:
       POSTGRES_DB: contextkeeper
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    secrets:
+      - postgres_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
 
   backend:
     build: .
@@ -23,19 +30,33 @@ services:
       - "8080:8080"
     environment:
       PORT: 8080
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/contextkeeper?sslmode=disable
-      JWT_SECRET: your-secret-key-change-in-production
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/contextkeeper?sslmode=require
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-      GITHUB_REDIRECT_URL: http://localhost:8080/api/auth/github
+      GITHUB_CLIENT_SECRET_FILE: /run/secrets/github_client_secret
+      GITHUB_REDIRECT_URL: ${GITHUB_REDIRECT_URL:-http://localhost:8080/api/auth/github}
       AI_SERVICE_URL: http://ai-service:8000
       AI_SERVICE_TIMEOUT: 30
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - .:/app
-    working_dir: /app
+    secrets:
+      - jwt_secret
+      - github_client_secret
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  github_client_secret:
+    file: ./secrets/github_client_secret.txt
 
 volumes:
   postgres_data:

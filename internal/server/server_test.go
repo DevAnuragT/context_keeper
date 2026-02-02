@@ -26,8 +26,9 @@ func TestHealthEndpoint(t *testing.T) {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	// Create test request
+	// Create test request with allowed origin
 	req := httptest.NewRequest("GET", "/health", nil)
+	req.Header.Set("Origin", "http://localhost:3000") // Set allowed origin
 	w := httptest.NewRecorder()
 
 	// Test the handler
@@ -43,8 +44,17 @@ func TestHealthEndpoint(t *testing.T) {
 		t.Errorf("Expected body %s, got %s", expected, w.Body.String())
 	}
 
-	// Check CORS headers
-	if w.Header().Get("Access-Control-Allow-Origin") != "*" {
-		t.Error("Missing CORS header")
+	// Check CORS headers (should match the origin for allowed origins)
+	if w.Header().Get("Access-Control-Allow-Origin") != "http://localhost:3000" {
+		t.Errorf("Expected CORS header 'http://localhost:3000', got '%s'", w.Header().Get("Access-Control-Allow-Origin"))
+	}
+
+	// Check security headers
+	if w.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Error("Missing X-Content-Type-Options header")
+	}
+
+	if w.Header().Get("X-Frame-Options") != "DENY" {
+		t.Error("Missing X-Frame-Options header")
 	}
 }

@@ -1,6 +1,9 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"log"
 	"os"
 	"strconv"
 )
@@ -31,8 +34,8 @@ type AIServiceConfig struct {
 func Load() *Config {
 	return &Config{
 		Port:        getEnvInt("PORT", 8080),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://localhost/contextkeeper?sslmode=disable"),
-		JWTSecret:   getEnv("JWT_SECRET", "your-secret-key"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://localhost/contextkeeper?sslmode=require"),
+		JWTSecret:   getEnv("JWT_SECRET", generateSecureSecret()),
 		GitHubOAuth: GitHubOAuthConfig{
 			ClientID:     getEnv("GITHUB_CLIENT_ID", ""),
 			ClientSecret: getEnv("GITHUB_CLIENT_SECRET", ""),
@@ -59,4 +62,14 @@ func getEnvInt(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+// generateSecureSecret generates a cryptographically secure random secret
+func generateSecureSecret() string {
+	bytes := make([]byte, 32) // 256 bits
+	if _, err := rand.Read(bytes); err != nil {
+		log.Printf("Warning: Failed to generate secure secret, using fallback: %v", err)
+		return "fallback-secret-key-change-immediately"
+	}
+	return hex.EncodeToString(bytes)
 }

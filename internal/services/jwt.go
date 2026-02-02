@@ -41,13 +41,13 @@ func (a *AuthServiceImpl) GenerateJWT(user *models.User) (string, error) {
 		return "", fmt.Errorf("failed to marshal header: %w", err)
 	}
 
-	// Create claims
+	// Create claims (without sensitive GitHub token)
 	now := time.Now()
 	claims := jwtClaims{
 		UserID:      user.ID,
 		Login:       user.Login,
 		Email:       user.Email,
-		GitHubToken: user.GitHubToken,
+		GitHubToken: "", // Don't store GitHub token in JWT for security
 		IssuedAt:    now.Unix(),
 		ExpiresAt:   now.Add(24 * time.Hour).Unix(), // 24 hour expiry
 	}
@@ -127,12 +127,12 @@ func (a *AuthServiceImpl) ValidateJWT(token string) (*models.User, error) {
 		return nil, fmt.Errorf("token issued in the future")
 	}
 
-	// Return user
+	// Return user (without GitHub token for security)
 	return &models.User{
 		ID:          claims.UserID,
 		Login:       claims.Login,
 		Email:       claims.Email,
-		GitHubToken: claims.GitHubToken,
+		GitHubToken: "", // Don't expose GitHub token from JWT
 	}, nil
 }
 

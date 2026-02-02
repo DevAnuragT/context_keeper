@@ -51,7 +51,7 @@ func TestOAuthScopeConsistencyProperty(t *testing.T) {
 // **Validates: Requirements 1.3, 1.5**
 func TestJWTAuthenticationRoundTripProperty(t *testing.T) {
 	// Property: For any successful GitHub OAuth flow, generating a JWT token
-	// and then validating it should preserve the user identity and GitHub token information
+	// and then validating it should preserve the user identity (excluding GitHub token for security)
 
 	cfg := &config.Config{
 		JWTSecret: "test-secret-key-for-property-testing",
@@ -236,12 +236,12 @@ func testJWTRoundTrip(t *testing.T, authSvc *AuthServiceImpl, originalUser *mode
 	return true
 }
 
-// usersEqual compares two users for equality
+// usersEqual compares two users for equality (excluding GitHub token for security)
 func usersEqual(a, b *models.User) bool {
 	return a.ID == b.ID &&
 		a.Login == b.Login &&
 		a.Email == b.Email &&
-		a.GitHubToken == b.GitHubToken
+		b.GitHubToken == "" // GitHub token should always be empty in JWT for security
 }
 
 // Additional property test for JWT token structure consistency

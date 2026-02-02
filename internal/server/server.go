@@ -3,6 +3,8 @@ package server
 import (
 	"database/sql"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/DevAnuragT/context_keeper/internal/config"
 	"github.com/DevAnuragT/context_keeper/internal/handlers"
@@ -53,12 +55,43 @@ func New(db *sql.DB, cfg *config.Config) *Server {
 	}
 }
 
+// getEnv gets environment variable with default
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+// contains checks if a comma-separated list contains a value
+func contains(list, value string) bool {
+	items := strings.Split(list, ",")
+	for _, item := range items {
+		if strings.TrimSpace(item) == value {
+			return true
+		}
+	}
+	return false
+}
+
 // ServeHTTP implements the http.Handler interface
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Add CORS headers
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// Add security headers
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("X-Frame-Options", "DENY")
+	w.Header().Set("X-XSS-Protection", "1; mode=block")
+	w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+	w.Header().Set("Content-Security-Policy", "default-src 'self'")
+
+	// Add CORS headers (restrict in production)
+	allowedOrigins := getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080")
+	origin := r.Header.Get("Origin")
+	if origin != "" && contains(allowedOrigins, origin) {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 	// Handle preflight requests
 	if r.Method == http.MethodOptions {
