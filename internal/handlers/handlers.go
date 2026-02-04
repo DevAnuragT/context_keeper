@@ -2,8 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
+	"github.com/DevAnuragT/context_keeper/internal/middleware"
 	"github.com/DevAnuragT/context_keeper/internal/models"
 	"github.com/DevAnuragT/context_keeper/internal/services"
 )
@@ -11,90 +15,228 @@ import (
 // Handlers contains all HTTP handlers
 type Handlers struct {
 	authSvc    services.AuthService
-	githubSvc  services.GitHubService
 	jobSvc     services.JobService
 	contextSvc services.ContextService
-	repo       services.RepositoryStore
+	repoStore  services.RepositoryStore
 }
 
 // New creates a new handlers instance
-func New(
-	authSvc services.AuthService,
-	githubSvc services.GitHubService,
-	jobSvc services.JobService,
-	contextSvc services.ContextService,
-	repo services.RepositoryStore,
-) *Handlers {
+func New(authSvc services.AuthService, jobSvc services.JobService, contextSvc services.ContextService, repoStore services.RepositoryStore) *Handlers {
 	return &Handlers{
 		authSvc:    authSvc,
-		githubSvc:  githubSvc,
 		jobSvc:     jobSvc,
 		contextSvc: contextSvc,
-		repo:       repo,
+		repoStore:  repoStore,
 	}
 }
 
 // HandleGitHubAuth handles GitHub OAuth callback
+// POST /api/auth/github
 func (h *Handlers) HandleGitHubAuth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Method not allowed")
 		return
 	}
 
-	// Get authorization code from request
-	code := r.URL.Query().Get("code")
-	if code == "" {
-		writeError(w, http.StatusBadRequest, "missing_code", "Authorization code is required")
+	// Parse request body
+	var req struct {
+		Code string `json:"code"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
 		return
 	}
 
-	// Handle OAuth callback
-	if h.authSvc == nil {
-		writeError(w, http.StatusNotImplemented, "not_implemented", "Authentication service not initialized")
+	if req.Code == "" {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Authorization code required")
 		return
 	}
 
-	authResp, err := h.authSvc.HandleGitHubCallback(r.Context(), code)
+	// Handle GitHub OAuth
+	authResponse, err := h.authSvc.HandleGitHubCallback(r.Context(), req.Code)
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "oauth_failed", err.Error())
+		writeError(w, http.StatusBadRequest, "oauth_error", fmt.Sprintf("OAuth failed: %v", err))
 		return
 	}
 
-	writeJSON(w, http.StatusOK, authResp)
+	writeJSON(w, http.StatusOK, authResponse)
 }
 
-// HandleRepos handles repository listing and status requests
-func (h *Handlers) HandleRepos(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		// Handle both /api/repos and /api/repos/{id}/status
-		// TODO: Implement in task 8.2
-		writeError(w, http.StatusNotImplemented, "not_implemented", "Repository listing not implemented yet")
-	default:
+// HandleGetRepos returns the authenticated user's ingested repositories
+// GET /api/repos
+func (h *Handlers) HandleGetRepos(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Method not allowed")
+		return
 	}
+
+	// Get user from context (set by auth middleware)
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "User not found in context")
+		return
+	}
+
+	// Get repositories for user
+	repos, err := h.repoStore.GetReposByUser(r.Context(), user.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_error", "Failed to get repositories")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"repositories": repos,
+	})
 }
 
-// HandleIngestRepo handles repository ingestion requests
+// HandleIngestRepo triggers repository ingestion
+// POST /api/repos/ingest
 func (h *Handlers) HandleIngestRepo(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Method not allowed")
 		return
 	}
 
-	// TODO: Implement in task 8.2
-	writeError(w, http.StatusNotImplemented, "not_implemented", "Repository ingestion not implemented yet")
+	// Get user from context
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "User not found in context")
+		return
+	}
+
+	// Parse request body
+	var req struct {
+		RepoID int64 `json:"repo_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
+		return
+	}
+
+	if req.RepoID == 0 {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Repository ID required")
+		return
+	}
+
+	// Create ingestion job
+	job, err := h.jobSvc.CreateIngestionJob(r.Context(), req.RepoID, user.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "job_creation_error", fmt.Sprintf("Failed to create ingestion job: %v", err))
+		return
+	}
+
+	// Start processing the job in background
+	err = h.jobSvc.ProcessJob(r.Context(), job, user.GitHubToken)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "job_processing_error", fmt.Sprintf("Failed to start job processing: %v", err))
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]interface{}{
+		"job_id": job.ID,
+		"status": job.Status,
+	})
 }
 
-// HandleContextQuery handles context restoration and requirement clarification
+// HandleGetRepoStatus returns ingestion job status for a repository
+// GET /api/repos/{id}/status
+func (h *Handlers) HandleGetRepoStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Method not allowed")
+		return
+	}
+
+	// Extract repo ID from URL path
+	path := strings.TrimPrefix(r.URL.Path, "/api/repos/")
+	path = strings.TrimSuffix(path, "/status")
+
+	repoID, err := strconv.ParseInt(path, 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Invalid repository ID")
+		return
+	}
+
+	// Get jobs for repository
+	jobs, err := h.repoStore.GetJobsByRepo(r.Context(), repoID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "database_error", "Failed to get job status")
+		return
+	}
+
+	if len(jobs) == 0 {
+		writeError(w, http.StatusNotFound, "not_found", "No ingestion jobs found for repository")
+		return
+	}
+
+	// Return the most recent job
+	writeJSON(w, http.StatusOK, jobs[0])
+}
+
+// HandleContextQuery processes unified context queries
+// POST /api/context/query
 func (h *Handlers) HandleContextQuery(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Method not allowed")
 		return
 	}
 
-	// TODO: Implement in task 8.2
-	writeError(w, http.StatusNotImplemented, "not_implemented", "Context query not implemented yet")
+	// Parse request body
+	var req models.ContextQuery
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON body")
+		return
+	}
+
+	if req.RepoID == 0 {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Repository ID required")
+		return
+	}
+
+	if req.Query == "" {
+		writeError(w, http.StatusBadRequest, "invalid_request", "Query required")
+		return
+	}
+
+	// Default mode if not specified
+	if req.Mode == "" {
+		req.Mode = "query"
+	}
+
+	// Process context query
+	response, err := h.contextSvc.ProcessQuery(r.Context(), req.RepoID, req.Query, req.Mode)
+	if err != nil {
+		// Check if it's a timeout error
+		if strings.Contains(err.Error(), "timeout") || strings.Contains(err.Error(), "context deadline exceeded") {
+			writeError(w, http.StatusGatewayTimeout, "ai_service_timeout", "AI service request timed out")
+			return
+		}
+
+		// Check if it's an AI service error
+		if strings.Contains(err.Error(), "AI service") {
+			writeError(w, http.StatusBadGateway, "ai_service_error", fmt.Sprintf("AI service error: %v", err))
+			return
+		}
+
+		writeError(w, http.StatusInternalServerError, "context_query_error", fmt.Sprintf("Failed to process context query: %v", err))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
+
+// writeError writes an error response
+func writeError(w http.ResponseWriter, status int, errorType, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	response := models.ErrorResponse{
+		Error:   errorType,
+		Message: message,
+		Code:    status,
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 // writeJSON writes a JSON response
@@ -104,12 +246,30 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	json.NewEncoder(w).Encode(data)
 }
 
-// writeError writes an error response
-func writeError(w http.ResponseWriter, status int, errorType, message string) {
-	response := models.ErrorResponse{
-		Error:   errorType,
-		Message: message,
-		Code:    status,
+// RecoveryMiddleware recovers from panics and returns a 500 error
+func RecoveryMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				writeError(w, http.StatusInternalServerError, "internal_error", "Internal server error")
+			}
+		}()
+		next.ServeHTTP(w, r)
 	}
-	writeJSON(w, status, response)
+}
+
+// CORSMiddleware adds CORS headers
+func CORSMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
 }

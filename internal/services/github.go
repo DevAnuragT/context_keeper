@@ -256,7 +256,7 @@ func (g *GitHubServiceImpl) GetUserInfo(ctx context.Context, token string) (*mod
 }
 
 // makeRequest makes an HTTP request to GitHub API with rate limiting and retry logic
-func (g *GitHubServiceImpl) makeRequest(ctx context.Context, method, url, token string, body interface{}, result interface{}) error {
+func (g *GitHubServiceImpl) makeRequest(ctx context.Context, method, url, token string, _ any, result any) error {
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return err
@@ -272,7 +272,7 @@ func (g *GitHubServiceImpl) makeRequest(ctx context.Context, method, url, token 
 }
 
 // makeRequestWithRetry implements retry logic for GitHub API requests
-func (g *GitHubServiceImpl) makeRequestWithRetry(req *http.Request, result interface{}) error {
+func (g *GitHubServiceImpl) makeRequestWithRetry(req *http.Request, result any) error {
 	var lastErr error
 
 	// Try up to 2 times (1 retry)
@@ -342,7 +342,7 @@ func (g *GitHubServiceImpl) getPullRequestFiles(ctx context.Context, token, owne
 }
 
 // isPullRequest checks if a GitHub issue is actually a pull request
-func (g *GitHubServiceImpl) isPullRequest(issue GitHubIssue) bool {
+func (g *GitHubServiceImpl) isPullRequest(_ GitHubIssue) bool {
 	// GitHub API returns pull requests in the issues endpoint
 	// We can identify them by checking if they have a pull_request field
 	// For now, we'll use a simple heuristic - this could be improved

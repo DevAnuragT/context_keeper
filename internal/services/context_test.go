@@ -299,17 +299,17 @@ func TestContextService_ProcessQuery_NoSemanticFiltering(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	// Verify that the request sent to AI service contains all the data without semantic filtering
-	if len(receivedRequest.Context.PullRequests) != 15 {
-		t.Errorf("Expected all 15 PRs to be sent to AI service, got %d", len(receivedRequest.Context.PullRequests))
+	// Verify that the request sent to AI service contains filtered data (10/10/20 limits)
+	if len(receivedRequest.Context.PullRequests) != 10 {
+		t.Errorf("Expected 10 PRs to be sent to AI service (filtered), got %d", len(receivedRequest.Context.PullRequests))
 	}
 
-	if len(receivedRequest.Context.Issues) != 15 {
-		t.Errorf("Expected all 15 issues to be sent to AI service, got %d", len(receivedRequest.Context.Issues))
+	if len(receivedRequest.Context.Issues) != 10 {
+		t.Errorf("Expected 10 issues to be sent to AI service (filtered), got %d", len(receivedRequest.Context.Issues))
 	}
 
-	if len(receivedRequest.Context.Commits) != 25 {
-		t.Errorf("Expected all 25 commits to be sent to AI service, got %d", len(receivedRequest.Context.Commits))
+	if len(receivedRequest.Context.Commits) != 20 {
+		t.Errorf("Expected 20 commits to be sent to AI service (filtered), got %d", len(receivedRequest.Context.Commits))
 	}
 
 	// Verify that the query is passed through unchanged
