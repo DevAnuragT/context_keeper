@@ -60,6 +60,8 @@ kubectl create namespace contextkeeper
 
 2. **Configure secrets:**
 ```bash
+# Copy the template and edit with your actual secrets
+cp deployment/kubernetes/secrets.yaml.example deployment/kubernetes/secrets.yaml
 # Edit deployment/kubernetes/secrets.yaml with your actual secrets
 # Then apply:
 kubectl apply -f deployment/kubernetes/secrets.yaml

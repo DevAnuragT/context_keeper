@@ -15,6 +15,13 @@ build/
 .env.test.local
 .env.production.local
 
+# Secrets and sensitive configuration
+secrets.yaml
+**/secrets.yaml
+secrets/
+!secrets/.gitkeep
+!secrets/*.example
+
 # Logs
 logs/
 *.log
