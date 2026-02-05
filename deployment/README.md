@@ -11,7 +11,7 @@ The ContextKeeper MCP + Slack Bot provides:
 
 ## Deployment Options
 
-### 1. Docker Compose (Recommended for Development)
+### 1. Docker Compose (Recommended)
 
 #### Prerequisites
 - Docker and Docker Compose installed
@@ -43,54 +43,7 @@ Environment variables can be configured in the `docker-compose.mcp-slack.yml` fi
 - **DEMO_MODE**: Enable/disable demo mode for testing
 - **LOG_LEVEL**: Logging level (debug, info, warn, error)
 
-### 2. Kubernetes (Recommended for Production)
-
-#### Prerequisites
-- Kubernetes cluster (1.19+)
-- kubectl configured
-- Ingress controller (nginx recommended)
-- cert-manager for TLS certificates (optional)
-
-#### Deployment Steps
-
-1. **Create namespace:**
-```bash
-kubectl create namespace contextkeeper
-```
-
-2. **Configure secrets:**
-```bash
-# Copy the template and edit with your actual secrets
-cp deployment/kubernetes/secrets.yaml.example deployment/kubernetes/secrets.yaml
-# Edit deployment/kubernetes/secrets.yaml with your actual secrets
-# Then apply:
-kubectl apply -f deployment/kubernetes/secrets.yaml
-```
-
-3. **Deploy the application:**
-```bash
-kubectl apply -f deployment/kubernetes/mcp-slack-deployment.yaml
-```
-
-4. **Verify deployment:**
-```bash
-kubectl get pods -n contextkeeper
-kubectl get services -n contextkeeper
-```
-
-5. **Check health:**
-```bash
-kubectl port-forward -n contextkeeper svc/contextkeeper-mcp-slack 8080:8080
-curl http://localhost:8080/health
-```
-
-#### Scaling
-```bash
-# Scale to 3 replicas
-kubectl scale deployment contextkeeper-mcp-slack -n contextkeeper --replicas=3
-```
-
-### 3. Standalone Docker
+### 2. Standalone Docker
 
 #### Build and run:
 ```bash
@@ -171,11 +124,8 @@ The application supports graceful restarts:
 # Via HTTP endpoint
 curl -X POST http://localhost:8080/restart
 
-# Via signal (Docker/Kubernetes)
+# Via signal (Docker)
 kill -USR1 <pid>
-
-# Via kubectl (Kubernetes)
-kubectl rollout restart deployment/contextkeeper-mcp-slack -n contextkeeper
 ```
 
 ## Troubleshooting
@@ -203,9 +153,6 @@ kubectl rollout restart deployment/contextkeeper-mcp-slack -n contextkeeper
 # Docker Compose
 docker-compose -f docker-compose.mcp-slack.yml logs -f
 
-# Kubernetes
-kubectl logs -f deployment/contextkeeper-mcp-slack -n contextkeeper
-
 # Docker
 docker logs -f contextkeeper-mcp-slack
 ```
@@ -220,7 +167,7 @@ export LOG_LEVEL=debug
 
 ## Security Considerations
 
-1. **Secrets Management**: Use proper secret management (Kubernetes secrets, Docker secrets, etc.)
+1. **Secrets Management**: Use proper secret management (Docker secrets, environment variables, etc.)
 2. **Network Security**: Configure appropriate network policies
 3. **TLS**: Enable TLS for production deployments
 4. **Resource Limits**: Set appropriate CPU and memory limits
@@ -230,11 +177,10 @@ export LOG_LEVEL=debug
 
 ### Resource Recommendations
 
-| Environment | CPU | Memory | Replicas |
-|-------------|-----|--------|----------|
-| Development | 250m | 256Mi | 1 |
-| Staging | 500m | 512Mi | 2 |
-| Production | 1000m | 1Gi | 3+ |
+| Environment | CPU | Memory |
+|-------------|-----|--------|
+| Development | 250m | 256Mi |
+| Production | 500m | 512Mi |
 
 ### Scaling Considerations
 
