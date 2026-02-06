@@ -39,6 +39,7 @@ func TestValidate(t *testing.T) {
 			name: "valid config",
 			config: &Config{
 				Port:        8080,
+				ServerURL:   "http://localhost:8080",
 				DatabaseURL: "postgres://localhost/test",
 				JWTSecret:   "secret",
 				GitHubOAuth: GitHubOAuthConfig{

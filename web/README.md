@@ -359,3 +359,127 @@ For questions or issues with the landing page:
 ## License
 
 Copyright © 2024 MCP Context Engine. All rights reserved.
+
+
+## Authentication System
+
+### Overview
+Complete authentication system with email/password and OAuth support. See [AUTH_README.md](./AUTH_README.md) for detailed documentation.
+
+### Authentication Pages
+
+#### Login Page (`/login`)
+- Email/password authentication
+- OAuth login (GitHub, Google, Slack)
+- "Remember me" functionality
+- Password reset link
+- Responsive design matching landing page
+
+#### Signup Page (`/signup`)
+- Account creation with email/password
+- OAuth signup options
+- Password strength indicator
+- Terms of Service acceptance
+- Email verification flow
+
+#### Password Reset (`/password-reset`)
+- Request password reset link
+- Email delivery confirmation
+- Resend link option
+- Security best practices
+
+#### Password Reset Confirmation (`/password-reset-confirm`)
+- Set new password with token
+- Password strength validation
+- Confirm password matching
+- Success/error states
+
+#### Email Verification (`/verify-email`)
+- Token-based email verification
+- Resend verification email
+- Pending/success/error states
+- Automatic verification on token
+
+### Authentication Module (`auth.js`)
+
+#### AuthManager Class
+Handles all authentication operations:
+- Email/password validation
+- Session management (JWT tokens)
+- API calls (signup, login, logout, password reset, email verification)
+- OAuth flows with CSRF protection
+- Token storage in localStorage
+
+#### AuthUI Class
+Provides UI helper functions:
+- Error/success message display
+- Loading state management
+- Password strength indicator
+- Field-level validation feedback
+
+### Security Features
+- **Password Requirements**: 8+ characters, uppercase, lowercase, number
+- **CSRF Protection**: State parameter for OAuth flows
+- **JWT Tokens**: Secure token-based authentication
+- **Email Verification**: Required for new accounts
+- **Password Reset**: Secure token-based reset flow
+- **Input Validation**: Client-side validation before API calls
+
+### Backend API Endpoints
+
+The authentication system requires these backend endpoints:
+
+```
+POST /api/auth/signup
+POST /api/auth/login
+POST /api/auth/logout
+POST /api/auth/password-reset/request
+POST /api/auth/password-reset/confirm
+POST /api/auth/verify-email
+POST /api/auth/verify-email/resend
+GET  /api/auth/oauth/{provider}
+POST /api/auth/oauth/callback
+```
+
+See [AUTH_README.md](./AUTH_README.md) for detailed API specifications and request/response formats.
+
+### Usage Example
+
+```javascript
+// Initialize auth manager
+const authManager = new AuthManager();
+
+// Login
+const result = await authManager.login('user@example.com', 'password');
+if (result.success) {
+  window.location.href = '/dashboard';
+}
+
+// Check authentication
+if (authManager.isAuthenticated()) {
+  const user = authManager.getUserData();
+  console.log('Logged in as:', user.email);
+}
+
+// OAuth login
+authManager.initiateOAuthFlow('github');
+```
+
+### Styling
+Authentication pages use `auth.css` which provides:
+- Consistent design with landing page
+- Responsive layouts
+- Form validation styles
+- Loading states
+- Success/error states
+- OAuth button styling
+- Password strength indicator
+
+### Testing Authentication
+1. Test email/password signup and login
+2. Verify OAuth flows (GitHub, Google, Slack)
+3. Test password reset flow
+4. Verify email verification flow
+5. Test error handling
+6. Check responsive design
+7. Verify accessibility features

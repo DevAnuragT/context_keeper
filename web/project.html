@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Project Details - MCP Context Engine">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <title>Project - MCP Context Engine</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Dashboard Navigation -->
+    <nav class="dashboard-nav">
+        <div class="nav-left">
+            <a href="/dashboard" class="dashboard-logo">
+                <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 2L4 8V24L16 30L28 24V8L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M16 16L4 8M16 16L28 8M16 16V30" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                <span>MCP Context Engine</span>
+            </a>
+            <div class="breadcrumb">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+                <span id="project-name-breadcrumb">Project</span>
+            </div>
+        </div>
+        
+        <div class="nav-right">
+            <button class="nav-icon-btn" id="notifications-btn" aria-label="Notifications">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notification-badge">3</span>
+            </button>
+            
+            <div class="user-menu">
+                <button class="user-menu-btn" id="user-menu-btn">
+                    <div class="user-avatar" id="user-avatar">
+                        <span id="user-initials">U</span>
+                    </div>
+                    <span id="user-name">User</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                
+                <div class="user-menu-dropdown" id="user-menu-dropdown">
+                    <div class="user-menu-header">
+                        <div class="user-menu-name" id="menu-user-name">User</div>
+                        <div class="user-menu-email" id="menu-user-email">user@example.com</div>
+                    </div>
+                    <div class="user-menu-divider"></div>
+                    <a href="/settings" class="user-menu-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
+                        </svg>
+                        Settings
+                    </a>
+                    <a href="/docs" class="user-menu-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        Documentation
+                    </a>
+                    <button class="user-menu-item" id="logout-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Project Content -->
+    <main class="dashboard-main">
+        <div class="dashboard-container">
+            <!-- Loading State -->
+            <div class="loading-state" id="loading-state">
+                <div class="spinner-large"></div>
+                <p>Loading project details...</p>
+            </div>
+
+            <!-- Project Content -->
+            <div id="project-content" style="display: none;">
+                <!-- Project Header -->
+                <div class="project-header">
+                    <div class="project-header-main">
+                        <h1 class="project-title" id="project-title">Project Name</h1>
+                        <p class="project-description" id="project-description">Project description</p>
+                    </div>
+                    <div class="project-header-actions">
+                        <button class="btn-secondary" id="project-settings-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
+                            </svg>
+                            Settings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Integration Status Cards -->
+                <section class="project-section">
+                    <h2 class="section-title">Integrations</h2>
+                    <div class="integration-status-grid">
+                        <!-- GitHub Integration -->
+                        <div class="integration-status-card" id="github-integration">
+                            <div class="integration-status-header">
+                                <div class="integration-status-icon github">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                                    </svg>
+                                </div>
+                                <div class="integration-status-info">
+                                    <h3>GitHub</h3>
+                                    <span class="status-badge status-disconnected" id="github-status">Not Connected</span>
+                                </div>
+                            </div>
+                            <div class="integration-status-body">
+                                <div class="integration-stats" id="github-stats" style="display: none;">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Repositories</span>
+                                        <span class="stat-value" id="github-repos">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Last Sync</span>
+                                        <span class="stat-value" id="github-last-sync">Never</span>
+                                    </div>
+                                </div>
+                                <button class="btn-primary btn-small" id="connect-github-btn">Connect GitHub</button>
+                            </div>
+                        </div>
+
+                        <!-- Slack Integration -->
+                        <div class="integration-status-card" id="slack-integration">
+                            <div class="integration-status-header">
+                                <div class="integration-status-icon slack">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+                                    </svg>
+                                </div>
+                                <div class="integration-status-info">
+                                    <h3>Slack</h3>
+                                    <span class="status-badge status-disconnected" id="slack-status">Not Connected</span>
+                                </div>
+                            </div>
+                            <div class="integration-status-body">
+                                <div class="integration-stats" id="slack-stats" style="display: none;">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Channels</span>
+                                        <span class="stat-value" id="slack-channels">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Last Sync</span>
+                                        <span class="stat-value" id="slack-last-sync">Never</span>
+                                    </div>
+                                </div>
+                                <button class="btn-primary btn-small" id="connect-slack-btn">Connect Slack</button>
+                            </div>
+                        </div>
+
+                        <!-- Discord Integration -->
+                        <div class="integration-status-card" id="discord-integration">
+                            <div class="integration-status-header">
+                                <div class="integration-status-icon discord">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                                    </svg>
+                                </div>
+                                <div class="integration-status-info">
+                                    <h3>Discord</h3>
+                                    <span class="status-badge status-disconnected" id="discord-status">Not Connected</span>
+                                </div>
+                            </div>
+                            <div class="integration-status-body">
+                                <div class="integration-stats" id="discord-stats" style="display: none;">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Servers</span>
+                                        <span class="stat-value" id="discord-servers">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Last Sync</span>
+                                        <span class="stat-value" id="discord-last-sync">Never</span>
+                                    </div>
+                                </div>
+                                <button class="btn-primary btn-small" id="connect-discord-btn">Connect Discord</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Ingestion Health Metrics -->
+                <section class="project-section">
+                    <h2 class="section-title">Ingestion Health</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-label">Total Events</span>
+                                <span class="metric-trend positive" id="events-trend">+12%</span>
+                            </div>
+                            <div class="metric-value" id="total-events">0</div>
+                            <div class="metric-footer">Last 7 days</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-label">Processing Rate</span>
+                                <span class="metric-trend positive" id="processing-trend">+5%</span>
+                            </div>
+                            <div class="metric-value" id="processing-rate">0/min</div>
+                            <div class="metric-footer">Average rate</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-label">Failed Jobs</span>
+                                <span class="metric-trend neutral" id="failed-trend">0</span>
+                            </div>
+                            <div class="metric-value" id="failed-jobs">0</div>
+                            <div class="metric-footer">Last 24 hours</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-label">Queue Size</span>
+                                <span class="metric-trend neutral" id="queue-trend">Normal</span>
+                            </div>
+                            <div class="metric-value" id="queue-size">0</div>
+                            <div class="metric-footer">Pending jobs</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Context Statistics -->
+                <section class="project-section">
+                    <h2 class="section-title">Context Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-entities">0</div>
+                                <div class="stat-label">Total Entities</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-decisions">0</div>
+                                <div class="stat-label">Decisions Tracked</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-discussions">0</div>
+                                <div class="stat-label">Discussions</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 18 22 12 16 6"></polyline>
+                                    <polyline points="8 6 2 12 8 18"></polyline>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-files">0</div>
+                                <div class="stat-label">Files Tracked</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-contributors">0</div>
+                                <div class="stat-label">Contributors</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-relationships">0</div>
+                                <div class="stat-label">Relationships</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recent Activity Feed -->
+                <section class="project-section">
+                    <h2 class="section-title">Recent Activity</h2>
+                    <div class="activity-feed" id="activity-feed">
+                        <div class="activity-empty">
+                            <p>No recent activity</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script src="auth.js"></script>
+    <script src="dashboard.js"></script>
+    <script>
+        // Project Detail Page Initialization
+        document.addEventListener('DOMContentLoaded', async () => {
+            const dashboardManager = new DashboardManager();
+            const authManager = new AuthManager();
+
+            // Check authentication
+            if (!dashboardManager.checkAuth()) {
+                return;
+            }
+
+            // Get project ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('id');
+
+            if (!projectId) {
+                window.location.href = '/dashboard';
+                return;
+            }
+
+            // Initialize user menu
+            const userData = authManager.getUserData();
+            if (userData) {
+                document.getElementById('user-name').textContent = userData.name || userData.email;
+                document.getElementById('menu-user-name').textContent = userData.name || userData.email;
+                document.getElementById('menu-user-email').textContent = userData.email;
+                
+                const initials = (userData.name || userData.email)
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+                document.getElementById('user-initials').textContent = initials;
+            }
+
+            // User menu toggle
+            const userMenuBtn = document.getElementById('user-menu-btn');
+            const userMenuDropdown = document.getElementById('user-menu-dropdown');
+            
+            userMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userMenuDropdown.classList.toggle('active');
+            });
+
+            document.addEventListener('click', () => {
+                userMenuDropdown.classList.remove('active');
+            });
+
+            // Logout handler
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                await authManager.logout();
+                window.location.href = '/login';
+            });
+
+            // Load project details
+            const loadingState = document.getElementById('loading-state');
+            const projectContent = document.getElementById('project-content');
+
+            const project = await dashboardManager.fetchProjectDetails(projectId);
+
+            if (!project) {
+                alert('Project not found');
+                window.location.href = '/dashboard';
+                return;
+            }
+
+            // Update page title and breadcrumb
+            document.title = `${project.name} - MCP Context Engine`;
+            document.getElementById('project-name-breadcrumb').textContent = project.name;
+            document.getElementById('project-title').textContent = project.name;
+            document.getElementById('project-description').textContent = project.description || 'No description';
+
+            // Load integrations
+            const integrations = await dashboardManager.fetchProjectIntegrations(projectId);
+            updateIntegrationStatus(integrations);
+
+            // Load metrics
+            const metrics = await dashboardManager.fetchProjectMetrics(projectId);
+            if (metrics) {
+                updateMetrics(metrics);
+            }
+
+            // Load statistics
+            const stats = await dashboardManager.fetchProjectStats(projectId);
+            if (stats) {
+                updateStatistics(stats);
+            }
+
+            // Load recent activity
+            const activities = await dashboardManager.fetchRecentActivity(projectId);
+            updateActivityFeed(activities);
+
+            loadingState.style.display = 'none';
+            projectContent.style.display = 'block';
+
+            // Integration connection handlers
+            document.getElementById('connect-github-btn').addEventListener('click', () => {
+                dashboardManager.connectIntegration(projectId, 'github');
+            });
+
+            document.getElementById('connect-slack-btn').addEventListener('click', () => {
+                dashboardManager.connectIntegration(projectId, 'slack');
+            });
+
+            document.getElementById('connect-discord-btn').addEventListener('click', () => {
+                dashboardManager.connectIntegration(projectId, 'discord');
+            });
+
+            // Start auto-refresh for real-time updates
+            dashboardManager.startAutoRefresh(async () => {
+                const updatedMetrics = await dashboardManager.fetchProjectMetrics(projectId);
+                if (updatedMetrics) {
+                    updateMetrics(updatedMetrics);
+                }
+
+                const updatedStats = await dashboardManager.fetchProjectStats(projectId);
+                if (updatedStats) {
+                    updateStatistics(updatedStats);
+                }
+            }, 30000); // Refresh every 30 seconds
+
+            // Helper functions
+            function updateIntegrationStatus(integrations) {
+                integrations.forEach(integration => {
+                    const platform = integration.platform;
+                    const statusBadge = document.getElementById(`${platform}-status`);
+                    const statsDiv = document.getElementById(`${platform}-stats`);
+                    const connectBtn = document.getElementById(`connect-${platform}-btn`);
+
+                    if (integration.connected) {
+                        statusBadge.textContent = integration.syncing ? 'Syncing' : 'Connected';
+                        statusBadge.className = `status-badge status-${integration.syncing ? 'syncing' : 'connected'}`;
+                        
+                        if (statsDiv) {
+                            statsDiv.style.display = 'grid';
+                            
+                            if (platform === 'github') {
+                                document.getElementById('github-repos').textContent = integration.repositories || 0;
+                                document.getElementById('github-last-sync').textContent = 
+                                    dashboardManager.formatDate(integration.last_sync);
+                            } else if (platform === 'slack') {
+                                document.getElementById('slack-channels').textContent = integration.channels || 0;
+                                document.getElementById('slack-last-sync').textContent = 
+                                    dashboardManager.formatDate(integration.last_sync);
+                            } else if (platform === 'discord') {
+                                document.getElementById('discord-servers').textContent = integration.servers || 0;
+                                document.getElementById('discord-last-sync').textContent = 
+                                    dashboardManager.formatDate(integration.last_sync);
+                            }
+                        }
+
+                        if (connectBtn) {
+                            connectBtn.textContent = 'Manage';
+                            connectBtn.className = 'btn-secondary btn-small';
+                        }
+                    }
+                });
+            }
+
+            function updateMetrics(metrics) {
+                document.getElementById('total-events').textContent = 
+                    dashboardManager.formatNumber(metrics.total_events || 0);
+                document.getElementById('processing-rate').textContent = 
+                    `${metrics.processing_rate || 0}/min`;
+                document.getElementById('failed-jobs').textContent = 
+                    dashboardManager.formatNumber(metrics.failed_jobs || 0);
+                document.getElementById('queue-size').textContent = 
+                    dashboardManager.formatNumber(metrics.queue_size || 0);
+
+                // Update trends
+                if (metrics.events_trend) {
+                    const trendEl = document.getElementById('events-trend');
+                    trendEl.textContent = `${metrics.events_trend > 0 ? '+' : ''}${metrics.events_trend}%`;
+                    trendEl.className = `metric-trend ${metrics.events_trend >= 0 ? 'positive' : 'negative'}`;
+                }
+            }
+
+            function updateStatistics(stats) {
+                document.getElementById('total-entities').textContent = 
+                    dashboardManager.formatNumber(stats.total_entities || 0);
+                document.getElementById('total-decisions').textContent = 
+                    dashboardManager.formatNumber(stats.total_decisions || 0);
+                document.getElementById('total-discussions').textContent = 
+                    dashboardManager.formatNumber(stats.total_discussions || 0);
+                document.getElementById('total-files').textContent = 
+                    dashboardManager.formatNumber(stats.total_files || 0);
+                document.getElementById('total-contributors').textContent = 
+                    dashboardManager.formatNumber(stats.total_contributors || 0);
+                document.getElementById('total-relationships').textContent = 
+                    dashboardManager.formatNumber(stats.total_relationships || 0);
+            }
+
+            function updateActivityFeed(activities) {
+                const activityFeed = document.getElementById('activity-feed');
+                
+                if (!activities || activities.length === 0) {
+                    activityFeed.innerHTML = '<div class="activity-empty"><p>No recent activity</p></div>';
+                    return;
+                }
+
+                activityFeed.innerHTML = activities.map(activity => 
+                    DashboardUI.renderActivityItem({
+                        ...activity,
+                        time: dashboardManager.formatDate(activity.timestamp)
+                    })
+                ).join('');
+            }
+
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                dashboardManager.stopAutoRefresh();
+            });
+        });
+    </script>
+</body>
+</html>

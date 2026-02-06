@@ -25,15 +25,6 @@ type ContextProcessorService interface {
 	ProcessEvents(ctx context.Context, events []NormalizedEvent) (*ProcessingResult, error)
 }
 
-// ProcessingResult represents the result of context processing
-type ProcessingResult struct {
-	DecisionRecords    []models.DecisionRecord      `json:"decision_records"`
-	DiscussionSummaries []models.DiscussionSummary   `json:"discussion_summaries"`
-	FeatureContexts    []models.FeatureContext      `json:"feature_contexts"`
-	FileContexts       []models.FileContextHistory  `json:"file_contexts"`
-	Relationships      []models.KnowledgeRelationship `json:"relationships"`
-}
-
 // PlatformEvent represents a raw event from a platform
 type PlatformEvent struct {
 	ID          string                 `json:"id"`
@@ -108,55 +99,6 @@ type IngestionOrchestratorImpl struct {
 	retryBackoff       time.Duration
 	healthCheckInterval time.Duration
 	deduplicationWindow time.Duration
-}
-
-// IngestionTask represents an active ingestion task
-type IngestionTask struct {
-	IntegrationID string
-	ProjectID     string
-	Platform      string
-	Status        IngestionTaskStatus
-	StartedAt     time.Time
-	LastSyncAt    *time.Time
-	ErrorCount    int
-	LastError     *string
-	Cancel        context.CancelFunc
-}
-
-// IngestionTaskStatus represents the status of an ingestion task
-type IngestionTaskStatus string
-
-const (
-	TaskStatusRunning   IngestionTaskStatus = "running"
-	TaskStatusPaused    IngestionTaskStatus = "paused"
-	TaskStatusFailed    IngestionTaskStatus = "failed"
-	TaskStatusCompleted IngestionTaskStatus = "completed"
-)
-
-// IngestionHealthStatus represents the health status of project ingestion
-type IngestionHealthStatus struct {
-	ProjectID           string                      `json:"project_id"`
-	OverallStatus       string                      `json:"overall_status"`
-	ActiveIntegrations  int                         `json:"active_integrations"`
-	HealthyIntegrations int                         `json:"healthy_integrations"`
-	FailedIntegrations  int                         `json:"failed_integrations"`
-	LastSyncAt          *time.Time                  `json:"last_sync_at"`
-	Integrations        []IntegrationHealthStatus   `json:"integrations"`
-}
-
-// IntegrationHealthStatus represents the health status of an integration
-type IntegrationHealthStatus struct {
-	IntegrationID      string                 `json:"integration_id"`
-	Platform           string                 `json:"platform"`
-	Status             string                 `json:"status"`
-	LastSyncAt         *time.Time             `json:"last_sync_at"`
-	LastSyncStatus     *string                `json:"last_sync_status"`
-	ErrorMessage       *string                `json:"error_message"`
-	ErrorCount         int                    `json:"error_count"`
-	DataSourceCount    int                    `json:"data_source_count"`
-	ActiveDataSources  int                    `json:"active_data_sources"`
-	SyncCheckpoint     map[string]interface{} `json:"sync_checkpoint"`
-	NextSyncScheduled  *time.Time             `json:"next_sync_scheduled"`
 }
 
 // NewIngestionOrchestrator creates a new ingestion orchestrator
@@ -424,7 +366,7 @@ func (io *IngestionOrchestratorImpl) StopProjectIngestion(ctx context.Context, p
 	defer io.mu.Unlock()
 
 	var stoppedCount int
-	for integrationID, task := range io.activeIngestions {
+	for _, task := range io.activeIngestions {
 		if task.ProjectID == projectID {
 			task.Cancel()
 			task.Status = TaskStatusPaused
@@ -600,7 +542,7 @@ func (io *IngestionOrchestratorImpl) UpdateSyncCheckpoint(ctx context.Context, i
 // RetryFailedIngestion retries a failed ingestion
 func (io *IngestionOrchestratorImpl) RetryFailedIngestion(ctx context.Context, integrationID string) error {
 	// Get integration
-	integration, err := io.store.GetProjectIntegration(ctx, integrationID)
+	_, err := io.store.GetProjectIntegration(ctx, integrationID)
 	if err != nil {
 		return fmt.Errorf("failed to get integration: %w", err)
 	}

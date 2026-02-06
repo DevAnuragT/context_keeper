@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Verify your email address">
+    <meta name="description" content="Verify your MCP Context Engine email address">
+    <meta name="robots" content="noindex, nofollow">
+    
     <title>Verify Email - MCP Context Engine</title>
     
     <link rel="stylesheet" href="styles.css">
@@ -12,206 +14,239 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="auth-page">
-    <!-- Simple Navigation -->
-    <nav class="auth-navbar">
-        <div class="container">
-            <a href="/" class="logo">
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16 2L4 8V24L16 30L28 24V8L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    <path d="M16 16L4 8M16 16L28 8M16 16V30" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                </svg>
-                <span>MCP Context Engine</span>
-            </a>
-        </div>
-    </nav>
-
-    <!-- Email Verification Content -->
+<body>
     <div class="auth-container">
-        <div class="auth-content">
-            <div class="verification-content" id="verification-pending">
-                <div class="verification-icon">📧</div>
-                <h1>Check Your Email</h1>
-                <p>We've sent a verification link to <strong id="user-email"></strong></p>
-                <p>Click the link in the email to verify your account and get started.</p>
+        <div class="auth-card">
+            <div class="auth-header">
+                <a href="/" class="auth-logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V24L16 30L28 24V8L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M16 16L4 8M16 16L28 8M16 16V30" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                    <span>MCP Context Engine</span>
+                </a>
+                <h1 class="auth-title">Verify your email</h1>
+                <p class="auth-subtitle">We've sent a verification link to your email address</p>
+            </div>
 
-                <div class="verification-actions">
-                    <a href="/login" class="btn-primary">Go to Login</a>
+            <!-- Loading State (when verifying token) -->
+            <div id="loading-state" class="auth-loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Verifying your email...</p>
+            </div>
+
+            <!-- Pending Verification State -->
+            <div id="pending-state">
+                <div class="auth-success-state">
+                    <div class="success-icon" style="background: var(--primary-color);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
+                    <h2 class="success-title">Check your inbox</h2>
+                    <p class="success-message">
+                        We've sent a verification email to <strong id="email-address"></strong>. 
+                        Click the link in the email to verify your account.
+                    </p>
+                    <p class="success-message" style="font-size: 14px; color: var(--text-light); margin-top: 24px;">
+                        Didn't receive the email? Check your spam folder or 
+                        <a href="#" id="resend-link" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                            resend verification email
+                        </a>
+                    </p>
+                    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+                            Already verified?
+                        </p>
+                        <a href="/login" class="btn-primary">
+                            Sign in
+                        </a>
+                    </div>
                 </div>
+            </div>
 
-                <div class="resend-link">
-                    <p>Didn't receive the email? 
-                        <button type="button" class="resend-verification">Resend verification email</button>
+            <!-- Success State (after verification) -->
+            <div id="success-state" style="display: none;">
+                <div class="auth-success-state">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <h2 class="success-title">Email verified!</h2>
+                    <p class="success-message">
+                        Your email has been successfully verified. You can now access all features of MCP Context Engine.
+                    </p>
+                    <a href="/dashboard" class="btn-primary" style="margin-top: 16px;">
+                        Go to Dashboard
+                    </a>
+                    <p style="margin-top: 16px; font-size: 14px; color: var(--text-secondary);">
+                        or <a href="/login" style="color: var(--primary-color); text-decoration: none;">sign in</a>
                     </p>
                 </div>
             </div>
 
-            <div class="verification-content" id="verification-success" style="display: none;">
-                <div class="verification-icon">✅</div>
-                <h1>Email Verified!</h1>
-                <p>Your email has been successfully verified. You can now sign in to your account.</p>
-
-                <div class="verification-actions">
-                    <a href="/login" class="btn-primary">Sign In</a>
-                </div>
-            </div>
-
-            <div class="verification-content" id="verification-error" style="display: none;">
-                <div class="verification-icon">❌</div>
-                <h1>Verification Failed</h1>
-                <p id="error-message">The verification link is invalid or has expired.</p>
-
-                <div class="verification-actions">
-                    <button type="button" class="btn-primary resend-verification">Request New Link</button>
-                    <a href="/login" class="btn-secondary">Back to Login</a>
-                </div>
-            </div>
-
-            <!-- Trust Signals -->
-            <div class="trust-signals">
-                <div class="trust-item">
-                    <span class="trust-icon">🔒</span>
-                    <span>Secure verification</span>
-                </div>
-                <div class="trust-item">
-                    <span class="trust-icon">⏱️</span>
-                    <span>Link expires in 24 hours</span>
+            <!-- Error State -->
+            <div id="error-state" style="display: none;">
+                <div class="auth-error-state">
+                    <div class="error-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h2 class="error-title">Verification failed</h2>
+                    <p class="error-message" id="error-message">
+                        This verification link is invalid or has expired. Please request a new one.
+                    </p>
+                    <div style="margin-top: 24px;">
+                        <form id="resend-form" style="display: flex; flex-direction: column; gap: 16px;">
+                            <input 
+                                type="email" 
+                                id="resend-email" 
+                                class="form-input" 
+                                placeholder="Enter your email"
+                                required
+                            >
+                            <button type="submit" class="btn-primary">
+                                Resend verification email
+                            </button>
+                        </form>
+                    </div>
+                    <p style="margin-top: 16px; font-size: 14px; color: var(--text-secondary);">
+                        or <a href="/login" style="color: var(--primary-color); text-decoration: none;">back to login</a>
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="auth.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
+            const authManager = new AuthManager();
+            
+            const loadingState = document.getElementById('loading-state');
+            const pendingState = document.getElementById('pending-state');
+            const successState = document.getElementById('success-state');
+            const errorState = document.getElementById('error-state');
+            const errorMessage = document.getElementById('error-message');
+            const emailAddress = document.getElementById('email-address');
+            const resendLink = document.getElementById('resend-link');
+            const resendForm = document.getElementById('resend-form');
+            const resendEmailInput = document.getElementById('resend-email');
+
+            // Get parameters from URL
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const email = urlParams.get('email');
 
-            const pendingView = document.getElementById('verification-pending');
-            const successView = document.getElementById('verification-success');
-            const errorView = document.getElementById('verification-error');
-            const userEmailEl = document.getElementById('user-email');
-            const errorMessageEl = document.getElementById('error-message');
-
             // Display email if provided
             if (email) {
-                userEmailEl.textContent = decodeURIComponent(email);
+                emailAddress.textContent = email;
             }
 
-            // If token is provided, verify it automatically
+            // If token is present, verify it
             if (token) {
-                try {
-                    const response = await fetch('/api/auth/verify-email', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ token }),
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        // Show success view
-                        pendingView.style.display = 'none';
-                        successView.style.display = 'block';
-                        errorView.style.display = 'none';
-
-                        // Track verification event
-                        if (window.gtag) {
-                            window.gtag('event', 'email_verified');
-                        }
-                    } else {
-                        // Show error view
-                        pendingView.style.display = 'none';
-                        successView.style.display = 'none';
-                        errorView.style.display = 'block';
-                        errorMessageEl.textContent = result.message || 'The verification link is invalid or has expired.';
-                    }
-                } catch (error) {
-                    console.error('Verification error:', error);
-                    pendingView.style.display = 'none';
-                    successView.style.display = 'none';
-                    errorView.style.display = 'block';
-                    errorMessageEl.textContent = 'Network error. Please check your connection and try again.';
-                }
-            } else if (!email) {
-                // No token or email provided
-                pendingView.style.display = 'none';
-                successView.style.display = 'none';
-                errorView.style.display = 'block';
-                errorMessageEl.textContent = 'Invalid verification link.';
+                verifyToken(token);
+            } else {
+                // Show pending state (waiting for user to click email link)
+                pendingState.style.display = 'block';
             }
 
-            // Handle resend verification
-            const resendButtons = document.querySelectorAll('.resend-verification');
-            resendButtons.forEach(button => {
-                let resendCooldown = 0;
+            async function verifyToken(token) {
+                loadingState.style.display = 'block';
+                pendingState.style.display = 'none';
 
-                button.addEventListener('click', async () => {
-                    if (resendCooldown > 0) return;
+                const result = await authManager.verifyEmail(token);
 
-                    const emailToResend = email || prompt('Please enter your email address:');
-                    if (!emailToResend) return;
+                loadingState.style.display = 'none';
 
-                    try {
-                        const response = await fetch('/api/auth/resend-verification', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ email: emailToResend }),
-                        });
+                if (result.success) {
+                    successState.style.display = 'block';
+                    trackEvent('email_verified');
+                } else {
+                    errorMessage.textContent = result.error;
+                    errorState.style.display = 'block';
+                    trackEvent('email_verification_failed', { error: result.error });
+                }
+            }
 
-                        const result = await response.json();
+            // Handle resend link click
+            resendLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                
+                if (!email) {
+                    alert('Please enter your email address');
+                    return;
+                }
 
-                        if (response.ok) {
-                            showNotification('Verification email sent! Please check your inbox.', 'success');
-                            
-                            // Set cooldown
-                            resendCooldown = 60;
-                            button.disabled = true;
-                            button.textContent = `Resend in ${resendCooldown}s`;
-                            
-                            const interval = setInterval(() => {
-                                resendCooldown--;
-                                if (resendCooldown <= 0) {
-                                    clearInterval(interval);
-                                    button.disabled = false;
-                                    button.textContent = 'Resend verification email';
-                                } else {
-                                    button.textContent = `Resend in ${resendCooldown}s`;
-                                }
-                            }, 1000);
-                        } else {
-                            showNotification(result.message || 'Failed to resend verification email', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Resend error:', error);
-                        showNotification('Network error. Please try again.', 'error');
-                    }
-                });
+                resendLink.textContent = 'Sending...';
+                resendLink.style.pointerEvents = 'none';
+
+                const result = await authManager.resendVerificationEmail(email);
+
+                if (result.success) {
+                    resendLink.textContent = 'Email sent!';
+                    setTimeout(() => {
+                        resendLink.textContent = 'resend verification email';
+                        resendLink.style.pointerEvents = 'auto';
+                    }, 3000);
+                    
+                    trackEvent('verification_email_resent', { email });
+                } else {
+                    resendLink.textContent = 'Failed to send';
+                    setTimeout(() => {
+                        resendLink.textContent = 'resend verification email';
+                        resendLink.style.pointerEvents = 'auto';
+                    }, 3000);
+                }
             });
 
-            function showNotification(message, type) {
-                const notification = document.createElement('div');
-                notification.className = type === 'success' ? 'form-success' : 'form-error';
-                notification.textContent = message;
-                notification.style.position = 'fixed';
-                notification.style.top = '20px';
-                notification.style.left = '50%';
-                notification.style.transform = 'translateX(-50%)';
-                notification.style.zIndex = '1000';
-                notification.style.maxWidth = '500px';
-                notification.style.width = '90%';
+            // Handle resend form submission (from error state)
+            resendForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
                 
-                document.body.appendChild(notification);
+                const emailToResend = resendEmailInput.value.trim();
                 
-                setTimeout(() => {
-                    notification.remove();
-                }, 5000);
+                if (!authManager.validateEmail(emailToResend)) {
+                    alert('Please enter a valid email address');
+                    return;
+                }
+
+                const submitButton = resendForm.querySelector('button[type="submit"]');
+                AuthUI.setLoading(submitButton, true);
+
+                const result = await authManager.resendVerificationEmail(emailToResend);
+
+                AuthUI.setLoading(submitButton, false);
+
+                if (result.success) {
+                    // Show pending state
+                    errorState.style.display = 'none';
+                    emailAddress.textContent = emailToResend;
+                    pendingState.style.display = 'block';
+                    
+                    // Update URL
+                    window.history.replaceState({}, document.title, '/verify-email?email=' + encodeURIComponent(emailToResend));
+                    
+                    trackEvent('verification_email_resent', { email: emailToResend });
+                } else {
+                    alert(result.error);
+                }
+            });
+
+            // Analytics tracking
+            function trackEvent(eventName, properties = {}) {
+                if (window.gtag) {
+                    window.gtag('event', eventName, properties);
+                }
+                console.log('Event tracked:', eventName, properties);
             }
+
+            trackEvent('verify_email_page_viewed', { has_token: !!token });
         });
     </script>
 </body>
