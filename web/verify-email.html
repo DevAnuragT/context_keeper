@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Verify your email address">
+    <title>Verify Email - MCP Context Engine</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="auth.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+    <!-- Simple Navigation -->
+    <nav class="auth-navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 2L4 8V24L16 30L28 24V8L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M16 16L4 8M16 16L28 8M16 16V30" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                <span>MCP Context Engine</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Email Verification Content -->
+    <div class="auth-container">
+        <div class="auth-content">
+            <div class="verification-content" id="verification-pending">
+                <div class="verification-icon">📧</div>
+                <h1>Check Your Email</h1>
+                <p>We've sent a verification link to <strong id="user-email"></strong></p>
+                <p>Click the link in the email to verify your account and get started.</p>
+
+                <div class="verification-actions">
+                    <a href="/login" class="btn-primary">Go to Login</a>
+                </div>
+
+                <div class="resend-link">
+                    <p>Didn't receive the email? 
+                        <button type="button" class="resend-verification">Resend verification email</button>
+                    </p>
+                </div>
+            </div>
+
+            <div class="verification-content" id="verification-success" style="display: none;">
+                <div class="verification-icon">✅</div>
+                <h1>Email Verified!</h1>
+                <p>Your email has been successfully verified. You can now sign in to your account.</p>
+
+                <div class="verification-actions">
+                    <a href="/login" class="btn-primary">Sign In</a>
+                </div>
+            </div>
+
+            <div class="verification-content" id="verification-error" style="display: none;">
+                <div class="verification-icon">❌</div>
+                <h1>Verification Failed</h1>
+                <p id="error-message">The verification link is invalid or has expired.</p>
+
+                <div class="verification-actions">
+                    <button type="button" class="btn-primary resend-verification">Request New Link</button>
+                    <a href="/login" class="btn-secondary">Back to Login</a>
+                </div>
+            </div>
+
+            <!-- Trust Signals -->
+            <div class="trust-signals">
+                <div class="trust-item">
+                    <span class="trust-icon">🔒</span>
+                    <span>Secure verification</span>
+                </div>
+                <div class="trust-item">
+                    <span class="trust-icon">⏱️</span>
+                    <span>Link expires in 24 hours</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const email = urlParams.get('email');
+
+            const pendingView = document.getElementById('verification-pending');
+            const successView = document.getElementById('verification-success');
+            const errorView = document.getElementById('verification-error');
+            const userEmailEl = document.getElementById('user-email');
+            const errorMessageEl = document.getElementById('error-message');
+
+            // Display email if provided
+            if (email) {
+                userEmailEl.textContent = decodeURIComponent(email);
+            }
+
+            // If token is provided, verify it automatically
+            if (token) {
+                try {
+                    const response = await fetch('/api/auth/verify-email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ token }),
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        // Show success view
+                        pendingView.style.display = 'none';
+                        successView.style.display = 'block';
+                        errorView.style.display = 'none';
+
+                        // Track verification event
+                        if (window.gtag) {
+                            window.gtag('event', 'email_verified');
+                        }
+                    } else {
+                        // Show error view
+                        pendingView.style.display = 'none';
+                        successView.style.display = 'none';
+                        errorView.style.display = 'block';
+                        errorMessageEl.textContent = result.message || 'The verification link is invalid or has expired.';
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    pendingView.style.display = 'none';
+                    successView.style.display = 'none';
+                    errorView.style.display = 'block';
+                    errorMessageEl.textContent = 'Network error. Please check your connection and try again.';
+                }
+            } else if (!email) {
+                // No token or email provided
+                pendingView.style.display = 'none';
+                successView.style.display = 'none';
+                errorView.style.display = 'block';
+                errorMessageEl.textContent = 'Invalid verification link.';
+            }
+
+            // Handle resend verification
+            const resendButtons = document.querySelectorAll('.resend-verification');
+            resendButtons.forEach(button => {
+                let resendCooldown = 0;
+
+                button.addEventListener('click', async () => {
+                    if (resendCooldown > 0) return;
+
+                    const emailToResend = email || prompt('Please enter your email address:');
+                    if (!emailToResend) return;
+
+                    try {
+                        const response = await fetch('/api/auth/resend-verification', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email: emailToResend }),
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            showNotification('Verification email sent! Please check your inbox.', 'success');
+                            
+                            // Set cooldown
+                            resendCooldown = 60;
+                            button.disabled = true;
+                            button.textContent = `Resend in ${resendCooldown}s`;
+                            
+                            const interval = setInterval(() => {
+                                resendCooldown--;
+                                if (resendCooldown <= 0) {
+                                    clearInterval(interval);
+                                    button.disabled = false;
+                                    button.textContent = 'Resend verification email';
+                                } else {
+                                    button.textContent = `Resend in ${resendCooldown}s`;
+                                }
+                            }, 1000);
+                        } else {
+                            showNotification(result.message || 'Failed to resend verification email', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Resend error:', error);
+                        showNotification('Network error. Please try again.', 'error');
+                    }
+                });
+            });
+
+            function showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.className = type === 'success' ? 'form-success' : 'form-error';
+                notification.textContent = message;
+                notification.style.position = 'fixed';
+                notification.style.top = '20px';
+                notification.style.left = '50%';
+                notification.style.transform = 'translateX(-50%)';
+                notification.style.zIndex = '1000';
+                notification.style.maxWidth = '500px';
+                notification.style.width = '90%';
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

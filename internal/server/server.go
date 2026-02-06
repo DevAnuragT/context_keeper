@@ -83,7 +83,19 @@ func New(db *sql.DB, cfg *config.Config) *Server {
 	mux.HandleFunc("/metrics", server.handleMetrics)
 
 	// API routes
+	// Authentication routes
 	mux.HandleFunc("/api/auth/github", h.HandleGitHubAuth)
+	mux.HandleFunc("/api/auth/register", h.HandleRegister)
+	mux.HandleFunc("/api/auth/login", h.HandleLogin)
+	mux.HandleFunc("/api/auth/password-reset", h.HandlePasswordResetRequest)
+	mux.HandleFunc("/api/auth/password-reset/confirm", h.HandlePasswordResetConfirm)
+	mux.HandleFunc("/api/auth/verify-email", h.HandleEmailVerification)
+	mux.HandleFunc("/api/auth/resend-verification", h.HandleResendEmailVerification)
+	
+	// OAuth routes
+	mux.HandleFunc("/api/auth/oauth/", h.HandleOAuth)
+	
+	// Protected routes
 	mux.HandleFunc("/api/repos", middleware.AuthRequired(authSvc, h.HandleGetRepos))
 	mux.HandleFunc("/api/repos/ingest", middleware.AuthRequired(authSvc, h.HandleIngestRepo))
 	mux.HandleFunc("/api/context/query", middleware.AuthRequired(authSvc, h.HandleContextQuery))

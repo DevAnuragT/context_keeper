@@ -40,7 +40,7 @@ func (e *EmailServiceImpl) SendEmailVerification(ctx context.Context, email, tok
 	}
 
 	subject := "Verify your email address"
-	verificationURL := fmt.Sprintf("http://localhost:8080/verify-email?token=%s", token)
+	verificationURL := fmt.Sprintf("%s/verify-email?token=%s", e.config.Email.BaseURL, token)
 	
 	body := fmt.Sprintf(`
 Hi %s,
@@ -73,7 +73,7 @@ func (e *EmailServiceImpl) SendPasswordReset(ctx context.Context, email, token, 
 	}
 
 	subject := "Reset your password"
-	resetURL := fmt.Sprintf("http://localhost:8080/reset-password?token=%s", token)
+	resetURL := fmt.Sprintf("%s/reset-password?token=%s", e.config.Email.BaseURL, token)
 	
 	body := fmt.Sprintf(`
 Hi %s,

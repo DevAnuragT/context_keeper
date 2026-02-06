@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticating... - MCP Context Engine</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="auth.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+    <!-- Simple Navigation -->
+    <nav class="auth-navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 2L4 8V24L16 30L28 24V8L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M16 16L4 8M16 16L28 8M16 16V30" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                <span>MCP Context Engine</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Authentication Processing -->
+    <div class="auth-container">
+        <div class="auth-content">
+            <div class="verification-content" style="text-align: center;">
+                <div class="verification-icon">
+                    <div class="spinner"></div>
+                </div>
+                <h1>Authenticating...</h1>
+                <p id="status-message">Please wait while we complete your authentication.</p>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .spinner {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+            const errorDescription = urlParams.get('error_description');
+            const statusMessage = document.getElementById('status-message');
+
+            // Handle OAuth errors
+            if (error) {
+                statusMessage.textContent = 'Authentication failed: ' + (errorDescription || error);
+                setTimeout(() => {
+                    const returnUrl = sessionStorage.getItem('oauth_return_url') || '/login';
+                    window.location.href = returnUrl + '?error=' + encodeURIComponent(errorDescription || error);
+                }, 2000);
+                return;
+            }
+
+            // Handle missing code
+            if (!code) {
+                statusMessage.textContent = 'Invalid authentication response';
+                setTimeout(() => {
+                    window.location.href = '/login?error=Invalid authentication response';
+                }, 2000);
+                return;
+            }
+
+            // Determine provider from state or URL
+            let provider = 'github'; // default
+            if (state) {
+                try {
+                    const stateData = JSON.parse(atob(state));
+                    provider = stateData.provider || 'github';
+                } catch (e) {
+                    // If state parsing fails, try to determine from referrer or default to github
+                    console.warn('Could not parse state:', e);
+                }
+            }
+
+            // Exchange code for token
+            try {
+                statusMessage.textContent = 'Completing authentication...';
+                
+                const response = await fetch(`/api/auth/oauth/${provider}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        code: code,
+                        provider: provider
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.token) {
+                    // Store token
+                    sessionStorage.setItem('auth_token', result.token);
+                    
+                    // Track successful OAuth
+                    if (window.gtag) {
+                        window.gtag('event', 'login', {
+                            method: provider
+                        });
+                    }
+
+                    statusMessage.textContent = 'Authentication successful! Redirecting...';
+                    
+                    // Redirect to dashboard or return URL
+                    const returnUrl = sessionStorage.getItem('oauth_return_url');
+                    sessionStorage.removeItem('oauth_return_url');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1000);
+                } else {
+                    throw new Error(result.message || 'Authentication failed');
+                }
+            } catch (error) {
+                console.error('OAuth callback error:', error);
+                statusMessage.textContent = 'Authentication failed: ' + error.message;
+                
+                setTimeout(() => {
+                    const returnUrl = sessionStorage.getItem('oauth_return_url') || '/login';
+                    sessionStorage.removeItem('oauth_return_url');
+                    window.location.href = returnUrl + '?error=' + encodeURIComponent(error.message);
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

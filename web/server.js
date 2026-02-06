@@ -45,7 +45,9 @@ const ROUTES = {
     '/signup': '/signup.html',
     '/login': '/login.html',
     '/reset-password': '/reset-password.html',
-    '/verify-email': '/verify-email.html'
+    '/reset-password-confirm': '/reset-password-confirm.html',
+    '/verify-email': '/verify-email.html',
+    '/auth/callback': '/auth-callback.html'
 };
 
 const server = http.createServer((req, res) => {
@@ -163,9 +165,11 @@ server.listen(PORT, () => {
     console.log(`Serving files from: ${PUBLIC_DIR}`);
     console.log('');
     console.log('Available pages:');
-    console.log(`  - http://localhost:${PORT}/          (Landing page)`);
-    console.log(`  - http://localhost:${PORT}/signup    (Signup page)`);
-    console.log(`  - http://localhost:${PORT}/login     (Login page)`);
+    console.log(`  - http://localhost:${PORT}/                      (Landing page)`);
+    console.log(`  - http://localhost:${PORT}/signup                (Signup page)`);
+    console.log(`  - http://localhost:${PORT}/login                 (Login page)`);
+    console.log(`  - http://localhost:${PORT}/reset-password        (Password reset)`);
+    console.log(`  - http://localhost:${PORT}/verify-email          (Email verification)`);
     console.log('');
     console.log('Press Ctrl+C to stop the server');
     console.log('='.repeat(60));

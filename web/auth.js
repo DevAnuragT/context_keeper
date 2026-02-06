@@ -1,5 +1,8 @@
 // Authentication functionality
 document.addEventListener('DOMContentLoaded', () => {
+    // Check if user is already authenticated and redirect if on auth pages
+    checkAuthenticationStatus();
+
     const signupForm = document.querySelector('#signup-form');
     const loginForm = document.querySelector('#login-form');
     const passwordInput = document.querySelector('input[type="password"]');
@@ -171,12 +174,17 @@ document.addEventListener('DOMContentLoaded', () => {
         setButtonLoading(submitBtn, true);
         
         try {
-            const response = await fetch('/api/auth/signup', {
+            const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify({
+                    email: data.email,
+                    password: data.password,
+                    first_name: data.name ? data.name.split(' ')[0] : null,
+                    last_name: data.name ? data.name.split(' ').slice(1).join(' ') : null
+                }),
             });
             
             const result = await response.json();
@@ -189,16 +197,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 
-                // Show success and redirect
-                showSuccess('Account created successfully! Redirecting...');
+                // Store token if provided
+                if (result.token) {
+                    sessionStorage.setItem('auth_token', result.token);
+                }
+                
+                // Show success and redirect to email verification
+                showSuccess('Account created successfully! Please verify your email.');
                 
                 setTimeout(() => {
-                    // Redirect to email verification or dashboard
-                    if (result.requiresVerification) {
-                        window.location.href = '/verify-email?email=' + encodeURIComponent(data.email);
-                    } else {
-                        window.location.href = '/dashboard';
-                    }
+                    window.location.href = '/verify-email?email=' + encodeURIComponent(data.email);
                 }, 1500);
             } else {
                 showError(result.message || 'Signup failed. Please try again.');
@@ -265,9 +273,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
+        // Store the current page to redirect back after OAuth
+        sessionStorage.setItem('oauth_return_url', window.location.pathname);
+        
         // Redirect to OAuth endpoint
         const redirectUrl = encodeURIComponent(window.location.origin + '/auth/callback');
-        window.location.href = `/api/auth/oauth/${provider}?redirect=${redirectUrl}`;
+        
+        if (provider === 'github') {
+            // For GitHub, use the existing GitHub OAuth endpoint
+            window.location.href = `/api/auth/oauth/github?redirect=${redirectUrl}`;
+        } else if (provider === 'google') {
+            // For Google OAuth
+            window.location.href = `/api/auth/oauth/google?redirect=${redirectUrl}`;
+        } else {
+            showError('Unsupported OAuth provider');
+        }
     }
 
     // Handle OAuth callback
@@ -340,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Password reset form
+    // Password reset request form
     const resetForm = document.querySelector('#reset-password-form');
     if (resetForm) {
         resetForm.addEventListener('submit', async (e) => {
@@ -357,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setButtonLoading(submitBtn, true);
             
             try {
-                const response = await fetch('/api/auth/reset-password', {
+                const response = await fetch('/api/auth/password-reset', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -365,12 +385,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ email }),
                 });
                 
+                const result = await response.json();
+                
                 if (response.ok) {
-                    showSuccess('Password reset instructions sent to your email!');
+                    showSuccess('Password reset instructions sent! Please check your email.');
                     resetForm.reset();
+                    
+                    // Disable form for 60 seconds to prevent spam
+                    submitBtn.disabled = true;
+                    let countdown = 60;
+                    const originalText = submitBtn.textContent;
+                    
+                    const interval = setInterval(() => {
+                        countdown--;
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                        } else {
+                            submitBtn.textContent = `Wait ${countdown}s`;
+                        }
+                    }, 1000);
                 } else {
-                    const result = await response.json();
-                    showError(result.message || 'Failed to send reset instructions');
+                    // Always show success message for security (don't reveal if email exists)
+                    showSuccess('If an account with that email exists, a password reset link has been sent.');
+                    resetForm.reset();
                 }
             } catch (error) {
                 console.error('Reset error:', error);
@@ -386,4 +425,92 @@ document.addEventListener('DOMContentLoaded', () => {
     if (firstInput) {
         firstInput.focus();
     }
+
+    // Check authentication status
+    function checkAuthenticationStatus() {
+        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+        const currentPath = window.location.pathname;
+        
+        // If user has a token and is on an auth page, redirect to dashboard
+        if (token && (currentPath === '/login' || currentPath === '/signup' || currentPath === '/login.html' || currentPath === '/signup.html')) {
+            // Verify token is still valid
+            fetch('/api/auth/verify', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = '/dashboard';
+                } else {
+                    // Token is invalid, remove it
+                    localStorage.removeItem('auth_token');
+                    sessionStorage.removeItem('auth_token');
+                }
+            }).catch(err => {
+                console.error('Token verification failed:', err);
+            });
+        }
+    }
 });
+
+// Global authentication helper functions
+window.authHelpers = {
+    // Get current auth token
+    getToken: function() {
+        return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    },
+    
+    // Set auth token
+    setToken: function(token, remember = false) {
+        if (remember) {
+            localStorage.setItem('auth_token', token);
+        } else {
+            sessionStorage.setItem('auth_token', token);
+        }
+    },
+    
+    // Clear auth token
+    clearToken: function() {
+        localStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_token');
+    },
+    
+    // Check if user is authenticated
+    isAuthenticated: function() {
+        return !!this.getToken();
+    },
+    
+    // Logout user
+    logout: function() {
+        this.clearToken();
+        window.location.href = '/login';
+    },
+    
+    // Make authenticated API request
+    fetchWithAuth: async function(url, options = {}) {
+        const token = this.getToken();
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+        
+        const headers = {
+            ...options.headers,
+            'Authorization': 'Bearer ' + token
+        };
+        
+        const response = await fetch(url, {
+            ...options,
+            headers
+        });
+        
+        // If unauthorized, clear token and redirect to login
+        if (response.status === 401) {
+            this.clearToken();
+            window.location.href = '/login?error=Session expired. Please login again.';
+            throw new Error('Unauthorized');
+        }
+        
+        return response;
+    }
+};
