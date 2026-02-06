@@ -156,17 +156,6 @@ The engine provides 5 MCP-compatible tools:
 
 See [SECURITY.md](SECURITY.md) for details.
 
-## 📝 License
-
-Copyright © 2024 MCP Context Engine. All rights reserved.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
-
-## 📧 Support
-
 For questions or issues:
 - Check the [documentation](docs/)
 - Review existing issues
-- Contact support@mcpcontextengine.com
